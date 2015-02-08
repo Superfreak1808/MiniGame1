@@ -8,6 +8,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.util.ArrayList;
 
 import javax.swing.JFrame;
 
@@ -32,19 +33,21 @@ public class Game extends Canvas implements Runnable
 	
 	private int playery = 200;
 	
+	private int difficulty = 20;
+	
 	private double velocity = 1.0;
 	private int velocity_counter = 1;
 
 	
-	private int[] pixels = ((DataBufferInt) background.getRaster().getDataBuffer()).getData();
-	
 	public Input input;
-	
-	public Sprite sprite = new Sprite();
-	
+	public Player player = new Player();
 	
 	private int releaseEffect = 20;
 	private String lastKeyDown = "";
+	
+	private Collision collision = new Collision();
+	
+	public ArrayList<Item> items = new ArrayList<Item>();
 	
 	public Game()
 	{
@@ -71,7 +74,7 @@ public class Game extends Canvas implements Runnable
 	public void init()
 	{
 		input = new Input(this);
-		sprite.init();
+		
 	}
 	
 	public synchronized void start() 
@@ -110,6 +113,28 @@ public class Game extends Canvas implements Runnable
 				tick();
 				delta -= 1;
 				nowRender = true;
+				if(items.size() < difficulty) 
+				{
+					addItem();
+				}
+				for(int i = 0; i < items.size(); i++) 
+				{
+					if(collision.testCollision(items.get(i).getX(), items.get(i).getY(), 50, 20, playerx, playery, 50, 50)){
+						System.out.println("collision");
+						player.addHealth(items.get(i).getHealthValue());
+						player.setScore(player.getScore() + 500);
+						items.remove(i);
+					}
+					else if(items.get(i).getX() < 0) 
+					{
+						items.remove(i);
+					}
+				}
+				if(player.getHealth() <= 0 ) {
+					// end game
+					running = false;
+					delta = -1;
+				}
 			}
 			//limit frames
 			try {
@@ -146,10 +171,41 @@ public class Game extends Canvas implements Runnable
 		 }
 	}
 	
+	
+	
 	public void tick()
 	{
 		tCount++;
 		Boolean isKeyDown = false;
+		
+		if(tCount % 30 == 0) {
+			player.removeHealth(5);
+			player.setScore(player.getScore() + 100);
+		}
+		
+		if(tCount % 200 == 0) 
+		{
+			if(difficulty > 2)
+			{
+			difficulty --;
+			}
+		}
+		
+		
+		if (playery <= 0)
+		{
+			playery = 0;
+		}
+		
+		if (playery >= 670)
+		{
+			playery = 670;
+		}
+		
+		for(int i =0; i<items.size(); i++) {
+			items.get(i).setX();
+		}
+		
 		if(velocity_counter <= 12) 
 		{
 			velocityIncrease(velocity_counter);
@@ -161,37 +217,23 @@ public class Game extends Canvas implements Runnable
 		
 		if(input.up.isPressed())
 		{
-			playery -= 1 + velocity;
-			velocity_counter++;
-			isKeyDown = true;
-			lastKeyDown = "up";
-			releaseEffect = 20;
+
+				playery -= 1 + velocity;
+				velocity_counter++;
+				isKeyDown = true;
+				lastKeyDown = "up";
+				releaseEffect = 20;
+			
 		}
 		if(input.down.isPressed())
 		{
-			playery += 1 + velocity;
-			velocity_counter++;
-			isKeyDown = true;
-			lastKeyDown = "down";
-			releaseEffect = 20;
-		}
-		if(input.left.isPressed())
-		{
-			playerx -= 1 + velocity;
-			velocity_counter++;
-			isKeyDown = true;
-			lastKeyDown = "left";
-			releaseEffect = 20;
+				playery += 1 + velocity;
+				velocity_counter++;
+				isKeyDown = true;
+				lastKeyDown = "down";
+				releaseEffect = 20;
 		}
 		
-		if(input.right.isPressed())
-		{
-			playerx += 1 + velocity;
-			velocity_counter++;
-			isKeyDown = true;
-			lastKeyDown = "right";
-			releaseEffect = 20;
-		}
 		if(!isKeyDown) 
 		{
 			velocity_counter = 1;
@@ -214,12 +256,17 @@ public class Game extends Canvas implements Runnable
 						break;
 				}
 				releaseEffect--;
-				System.out.println(releaseEffect);
+				//System.out.println(releaseEffect);
 			}
 		}
 		
 		
 		
+	}
+	
+	public void addItem() {
+		Item item = new Item();
+		items.add(item);
 	}
 	
 	public void render()
@@ -231,11 +278,22 @@ public class Game extends Canvas implements Runnable
 			return;
 		}
 		Graphics g = bs.getDrawGraphics();
-		g.setColor(Color.BLACK);
-		g.fillRect(0, 0, getWidth(), getHeight());
+		//g.setColor(Color.BLACK);
+		//g.fillRect(0, 0, getWidth(), getHeight());
 		
 		g.drawImage(background, 0, 0, getWidth(), getHeight(), null); 
-		g.drawImage(sprite.getImage(), playerx, playery, 50, 50, null);
+		g.drawImage(player.getImage(), playerx, playery, 50, 50, null);
+		
+		for(int i =0; i<items.size(); i++) {
+			g.drawImage(items.get(i).getImage(), items.get(i).getX(), items.get(i).getY(), 20, 20, null);
+		}
+		g.setColor(Color.RED);
+		g.fillRect(getWidth() - (player.getHealth()+20), getHeight() - 30, player.getHealth(), 20);
+		
+		g.setColor(Color.WHITE);
+		g.drawString("Fuel",getWidth() - 50 , getHeight() - 16); 
+		
+		g.drawString("Score: " + player.getScore(), 0 , getHeight() - 16); 
 		
 		g.dispose();
 		bs.show(); 
