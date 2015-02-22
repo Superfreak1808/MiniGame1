@@ -3,32 +3,31 @@ package minigame;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
-public class Item 
+public class Bullet
 {
 	public int x_cord = 0;
 	public int y_cord = 0;
 	
-	public int movementSpeed = 5;
+	public int movementSpeed = 4;
 	
-	public int healthValue = 10;
+	public int stopSpeed = 0;
+	
+	public int hitValue = 10;
 	
 	public Sprite sprite;
 	
-	public Item () 
+	public Bullet (int x, int y) 
 	{
-		Random rand = new Random();
-		int rand_y = rand.nextInt((700) + 1);
-		int rand_x = rand.nextInt((1000) + 1);
+	
+		this.x_cord = x;
+		this.y_cord = y;
 		
-		this.x_cord = 1500 + rand_x;
-		this.y_cord = rand_y;
-		
-		sprite = new Sprite(20, 18, "./res/fuel3.jpg");
+		sprite = new Sprite(5, 5, "./res/bullet.jpg");
 	}
 	
 	public int getHealthValue() 
 	{
-		return healthValue;
+		return hitValue;
 	}
 	
 	public BufferedImage getImage()
@@ -48,7 +47,6 @@ public class Item
 	
 	public void setX() 
 	{
-		x_cord -= movementSpeed;
+		x_cord += movementSpeed;
 	}
-	
 }

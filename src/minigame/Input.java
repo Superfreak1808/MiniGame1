@@ -29,6 +29,7 @@ public class Input implements KeyListener
 	public Key down = new Key();
 	public Key left = new Key();
 	public Key right = new Key();
+	public Key space = new Key();
 
 	public void keyPressed(KeyEvent e) 
 	{
@@ -69,6 +70,12 @@ public class Input implements KeyListener
 		{
 			right.toggle(isPressed);
 		}
+		
+		if(keyCode == KeyEvent.VK_SPACE)
+		{
+			space.toggle(isPressed);
+		}
+	
 	}
 
 }

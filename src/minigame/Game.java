@@ -23,6 +23,8 @@ public class Game extends Canvas implements Runnable
 	
 	private JFrame frame;
 	
+	public int bulletTimer = 0;
+	
 	public boolean running = false;
 	
 	public int tCount = 0;
@@ -35,9 +37,12 @@ public class Game extends Canvas implements Runnable
 	
 	private int difficulty = 20;
 	
+	private int enemycount = 5;
+	
 	private double velocity = 1.0;
 	private int velocity_counter = 1;
 
+	private Boolean firstTime = true;
 	
 	public Input input;
 	public Player player = new Player();
@@ -47,7 +52,13 @@ public class Game extends Canvas implements Runnable
 	
 	private Collision collision = new Collision();
 	
+	public ArrayList<Bullet> bullets = new ArrayList<Bullet>();
+	
+	public ArrayList<Bullet> enemybullets = new ArrayList<Bullet>();
+	
 	public ArrayList<Item> items = new ArrayList<Item>();
+	
+	public ArrayList<Enemy> enemys = new ArrayList<Enemy>();
 	
 	public Game()
 	{
@@ -117,10 +128,15 @@ public class Game extends Canvas implements Runnable
 				{
 					addItem();
 				}
+				
+				if(enemys.size() < enemycount) 
+				{
+					addEnemy();
+				}
 				for(int i = 0; i < items.size(); i++) 
 				{
-					if(collision.testCollision(items.get(i).getX(), items.get(i).getY(), 50, 20, playerx, playery, 50, 50)){
-						System.out.println("collision");
+					if(collision.testCollision(items.get(i).getX(), items.get(i).getY(), 50, 20, playerx, playery, 50, 50))
+					{
 						player.addHealth(items.get(i).getHealthValue());
 						player.setScore(player.getScore() + 500);
 						items.remove(i);
@@ -130,7 +146,36 @@ public class Game extends Canvas implements Runnable
 						items.remove(i);
 					}
 				}
-				if(player.getHealth() <= 0 ) {
+
+				for(int i = 0; i < bullets.size(); i++) 
+				{
+					if(bullets.get(i).getX() > 1280) 
+					{
+						bullets.remove(i);
+					}
+						
+				}
+				
+				for(int j = 0; j < enemys.size(); j++) 
+				{
+					if(enemys.get(j).getX() < 0) 
+					{
+						enemys.remove(j);
+					}
+					for(int i = 0; i < bullets.size(); i++) {
+						if(collision.testCollision(bullets.get(i).getX(), bullets.get(i).getY(), 5, 5, enemys.get(j).getX(), enemys.get(j).getY(), 64, 64))
+						{
+							bullets.remove(i);
+							enemys.remove(j);
+						}
+					}
+				}
+				
+
+				
+
+				if(player.getHealth() <= 0 ) 
+				{
 					// end game
 					running = false;
 					delta = -1;
@@ -178,16 +223,21 @@ public class Game extends Canvas implements Runnable
 		tCount++;
 		Boolean isKeyDown = false;
 		
-		if(tCount % 30 == 0) {
+		
+		
+		bulletTimer++;
+		
+		if(tCount % 30 == 0) 
+		{
 			player.removeHealth(5);
 			player.setScore(player.getScore() + 100);
 		}
 		
 		if(tCount % 200 == 0) 
 		{
-			if(difficulty > 2)
+			if(difficulty > 5)
 			{
-			difficulty --;
+				difficulty --;
 			}
 		}
 		
@@ -202,9 +252,37 @@ public class Game extends Canvas implements Runnable
 			playery = 670;
 		}
 		
-		for(int i =0; i<items.size(); i++) {
+		for(int i =0; i<items.size(); i++) 
+		{
 			items.get(i).setX();
 		}
+		
+		for(int i =0; i<enemys.size(); i++) 
+		{
+			enemys.get(i).setX();
+			if(enemys.get(i).getY() < playery - 10)
+			{
+				enemys.get(i).setUp();
+
+				
+			}
+			else if(enemys.get(i).getY() > playery + 10) 
+			{
+				enemys.get(i).setDown();
+			}	
+			//else if(enemys.get(i).getY() == playery )
+			else 
+			{
+				//shoot
+			}
+		}
+		
+		for(int i =0; i<bullets.size(); i++) 
+		{
+			bullets.get(i).setX();
+		}
+		
+
 		
 		if(velocity_counter <= 12) 
 		{
@@ -233,14 +311,23 @@ public class Game extends Canvas implements Runnable
 				lastKeyDown = "down";
 				releaseEffect = 20;
 		}
-		
+		if(input.space.isPressed())
+		{
+			if(bulletTimer > 40)
+			{
+			Bullet bullet = new Bullet(playerx + 50, playery + 20);
+			bullets.add(bullet);
+			bulletTimer = 0;
+			}
+		}
 		if(!isKeyDown) 
 		{
 			velocity_counter = 1;
 			velocity = 1;
 			
 			
-			if(releaseEffect > 0 && lastKeyDown != "") {
+			if(releaseEffect > 0 && lastKeyDown != "") 
+			{
 				switch(lastKeyDown) {
 					case "up": 
 						playery -= releaseEffect;
@@ -264,9 +351,16 @@ public class Game extends Canvas implements Runnable
 		
 	}
 	
-	public void addItem() {
+	public void addItem() 
+	{
 		Item item = new Item();
 		items.add(item);
+	}
+	
+	public void addEnemy() 
+	{
+		Enemy enemy = new Enemy();
+		enemys.add(enemy);
 	}
 	
 	public void render()
@@ -278,15 +372,26 @@ public class Game extends Canvas implements Runnable
 			return;
 		}
 		Graphics g = bs.getDrawGraphics();
-		//g.setColor(Color.BLACK);
-		//g.fillRect(0, 0, getWidth(), getHeight());
 		
 		g.drawImage(background, 0, 0, getWidth(), getHeight(), null); 
 		g.drawImage(player.getImage(), playerx, playery, 50, 50, null);
 		
-		for(int i =0; i<items.size(); i++) {
+		for(int i =0; i<items.size(); i++) 
+		{
 			g.drawImage(items.get(i).getImage(), items.get(i).getX(), items.get(i).getY(), 20, 20, null);
 		}
+		
+		for(int i =0; i<enemys.size(); i++) 
+		{
+			g.drawImage(enemys.get(i).getImage(), enemys.get(i).getX(), enemys.get(i).getY(), 64, 64, null);
+		}
+		
+		for(int i =0; i<bullets.size(); i++) 
+		{
+			g.drawImage(bullets.get(i).getImage(), bullets.get(i).getX(), bullets.get(i).getY(), 5, 5, null);
+		}
+		
+		
 		g.setColor(Color.RED);
 		g.fillRect(getWidth() - (player.getHealth()+20), getHeight() - 30, player.getHealth(), 20);
 		
@@ -296,7 +401,9 @@ public class Game extends Canvas implements Runnable
 		g.drawString("Score: " + player.getScore(), 0 , getHeight() - 16); 
 		
 		g.dispose();
+
 		bs.show(); 
+
 	}
 
 	public static void main(String[] args) 
